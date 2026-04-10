@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calcolatore Spessore Film Sottili / Thin Film Thickness Calculator</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #2c3e50; max-width: 950px; margin: 40px auto; padding: 20px; line-height: 1.6; }
+        .card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 30px; position: relative; }
+        .header-container { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; margin-bottom: 15px; }
+        h1 { color: #1a252f; margin: 0; font-size: 1.8em; }
+        .lang-btn { background: #2980b9; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: background 0.3s; }
+        .lang-btn:hover { background: #1f618d; }
+        .cover-image { text-align: center; margin-bottom: 25px; }
+        .cover-image img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .cover-image .caption { font-size: 0.8em; color: #7f8c8d; margin-top: 8px; }
+        .grid-container { display: grid; grid-template-columns: 1.1fr 1fr; gap: 25px; }
+        .input-group { margin-bottom: 15px; display: flex; flex-direction: column; }
+        label { font-weight: bold; margin-bottom: 5px; font-size: 0.9em; color: #7f8c8d; }
+        input, select { padding: 10px; border: 1px solid #bdc3c7; border-radius: 5px; font-size: 1em; background-color: #fafafa; }
+        .deduction-box { background: #eef2f5; padding: 12px; border-radius: 5px; border-left: 4px solid #f39c12; margin-top: 5px; }
+        .results { background: #e8f4f8; padding: 20px; border-radius: 8px; border-left: 5px solid #2980b9; height: fit-content; }
+        .result-item { font-size: 1.1em; margin-bottom: 12px; }
+        .highlight { font-weight: bold; color: #c0392b; font-size: 1.4em; }
+        .theory-section { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: justify; }
+        .theory-box { background: #fdfefe; border-left: 4px solid #27ae60; padding: 15px; margin: 20px 0; border-radius: 4px; }
+        .formula-box { background: #f4f6f7; padding: 10px; border-radius: 5px; margin: 10px 0; font-family: monospace; text-align: center; }
+        .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #dcdde1; font-size: 0.9em; color: #7f8c8d; line-height: 1.8; }
+        .footer a { color: #2980b9; text-decoration: none; font-weight: bold; }
+        .footer a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="header-container">
+        <div>
+            <h1 id="t_main_title">Calcolatore Spessore Film Sottili</h1>
+            <p id="t_main_desc" style="margin-top: 5px; margin-bottom: 0; color: #7f8c8d;">Calcola lo spessore ottico di un film tenendo conto dell'indice di rifrazione del substrato e del film, dell'assorbimento e del tipo di misurazione sperimentale.</p>
+        </div>
+        <button class="lang-btn" onclick="toggleLanguage()" id="btn_lang">🇬🇧 English</button>
+    </div>
+    
+    <div class="cover-image">
+        <img src="image_25d705.jpg" alt="Thin Film Interference Pattern">
+        <div class="caption">Soap film demonstration - (Copyright © 2026 The President and Fellows of Harvard College).</div>
+    </div>
+
+    <div class="grid-container">
+        <div>
+            <div class="input-group">
+                <label for="lambda" id="t_lbl_lambda">Lunghezza d'onda λ (nm):</label>
+                <input type="number" id="lambda" value="306" step="1">
+            </div>
+            <div class="input-group">
+                <label for="n_film" id="t_lbl_nfilm">Indice Rifrazione Film (n_film):</label>
+                <input type="number" id="n_film" value="2.312" step="0.01">
+            </div>
+            <div class="input-group">
+                <label for="k_film" id="t_lbl_kfilm">Coeff. Estinzione Film (k):</label>
+                <input type="number" id="k_film" value="0.092" step="0.001" min="0">
+            </div>
+            <div class="input-group">
+                <label for="n_sub" id="t_lbl_nsub">Indice Rifrazione Substrato (n_sub):</label>
+                <input type="number" id="n_sub" value="1.50" step="0.01">
+            </div>
+            <hr style="border: 0; border-top: 1px solid #bdc3c7; margin: 15px 0;">
+            <div class="input-group">
+                <label for="spettro" id="t_lbl_spect">Tipo di Spettro:</label>
+                <select id="spettro">
+                    <option value="R" id="opt_R">Riflettanza (R)</option>
+                    <option value="T" id="opt_T" selected>Trasmittanza (T)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label for="ordine" id="t_lbl_ord">Ordine m (intero o semi-intero):</label>
+                <input type="number" id="ordine" value="1" step="0.5" min="0.5">
+            </div>
+            
+            <div class="deduction-box">
+                <label id="t_lbl_fringe" style="margin-bottom: 2px; color: #d35400;">Frangia Dedotta:</label>
+                <div id="out_frangia" style="font-size: 1.25em; font-weight: bold; color: #2c3e50;">-</div>
+            </div>
+        </div>
+
+        <div class="results">
+            <h3 id="t_res_anal" style="margin-top: 0;">Analisi Fenomenologica</h3>
+            <div class="result-item" style="font-size: 0.95em; line-height: 1.3;">
+                <span id="out_logica" style="color: #2980b9;">-</span>
+            </div>
+            <hr style="border: 0; border-top: 1px solid #bdc3c7; margin: 15px 0;">
+            <h3 id="t_res_dyn">Dinamica di Fase</h3>
+            <div class="result-item"><span id="t_res_p1">Sfasamento Aria/Film</span> (\(\phi_1\)): <strong><span id="out_phi1">0.0</span>°</strong></div>
+            <div class="result-item"><span id="t_res_p2">Sfasamento Film/Sub</span> (\(\phi_2\)): <strong><span id="out_phi2">0.0</span>°</strong></div>
+            <div class="result-item"><span id="t_res_pd">Differenza Fase</span> (\(\Delta\phi\)): <strong><span id="out_delta">0.0</span>°</strong></div>
+            <hr style="border: 0; border-top: 1px solid #bdc3c7; margin: 15px 0;">
+            <div class="result-item"><span id="t_res_thick">Spessore Corretto (d):</span> <br><span id="out_spessore" class="highlight">0.0</span> nm</div>
+        </div>
+    </div>
+</div>
+
+<div class="theory-section">
+    <h2 id="th_h2">Fondamenti Fisici: Interferenza e Fase Complessa</h2>
+    
+    <h3 id="th_h3_1">1. La Legge Base dell'Interferenza (Mezzi Ideali)</h3>
+    <p id="th_p3">Il fenomeno dell'interferenza nei film sottili è governato dalla differenza di cammino ottico tra il raggio riflesso dalla superficie superiore (Aria/Film) e quello riflesso dalla superficie inferiore (Film/Substrato). Se ignoriamo l'assorbimento (\(k=0\)) e i salti di fase anomali, la differenza di cammino in incidenza normale è semplicemente il doppio del tragitto nel film: \(\Delta = 2 \cdot n_{film} \cdot d\).</p>
+
+    <h3 id="th_h3_2">2. Il Salto di Fase \(\pi\) (Riflessione da Mezzo più Denso)</h3>
+    <p id="th_p5">Le equazioni di Fresnel impongono che un'onda elettromagnetica subisca uno sfasamento di \(180^\circ\) (\(\pi\)) se viene riflessa da un mezzo con indice di rifrazione <i>maggiore</i> di quello di provenienza. Analizziamo i due regimi tipici assumendo materiali trasparenti (\(k=0\)):</p>
+    
+    <div class="theory-box" id="th_box1">
+        <strong>Caso A: Salto di Fase Netto \(\pi\) (\(n_{aria} < n_{film} > n_{sub}\))</strong><br>
+        Es: Aria (1.0) / ITO (2.0) / Vetro (1.5).<br>
+        All'interfaccia superiore la luce subisce uno sfasamento di \(\pi\). All'interfaccia inferiore passa verso un indice più basso, quindi lo sfasamento è \(0\). 
+        A causa di questo sfasamento netto di \(\pi\), le equazioni di base si <strong>invertono</strong> matematicamente:
+        <div class="formula-box">
+            Massimi (Interferenza Costruttiva in R): \( 2 n d = \left(m + \frac{1}{2}\right) \lambda \)<br>
+            Minimi (Interferenza Distruttiva in R): \( 2 n d = m \lambda \)
+        </div>
+    </div>
+
+    <div class="theory-box" id="th_box2">
+        <strong>Caso B: Nessun Salto Netto (\(n_{aria} < n_{film} < n_{sub}\))</strong><br>
+        Es: Aria (1.0) / ITO (2.0) / Silicio (3.5).<br>
+        Qui, <i>entrambe</i> le interfacce riflettono la luce verso un mezzo otticamente più denso. Si generano due sfasamenti di \(\pi\) che si elidono a vicenda. Le condizioni di interferenza mantengono la forma classica intatta:
+        <div class="formula-box">
+            Massimi (Interferenza Costruttiva in R): \( 2 n d = m \lambda \)<br>
+            Minimi (Interferenza Distruttiva in R): \( 2 n d = \left(m + \frac{1}{2}\right) \lambda \)
+        </div>
+    </div>
+
+    <h3 id="th_h3_3">3. L'ingresso di \(k\): Sfasamento Anomalo e Coefficienti di Fresnel</h3>
+    <p id="th_p6">Quando il materiale assorbe luce, il coefficiente di estinzione è \(k>0\). L'indice di rifrazione diventa un numero complesso \(\tilde{N} = n - ik\). Di conseguenza, il coefficiente di riflessione in ampiezza di Fresnel per incidenza normale, \(r = \frac{\tilde{N}_1 - \tilde{N}_2}{\tilde{N}_1 + \tilde{N}_2}\), assume la forma complessa \(r = |r|e^{i\phi}\), da cui si estrae analiticamente la fase \(\phi = \arctan\left(\frac{\text{Im}(r)}{\text{Re}(r)}\right)\).</p>
+    
+    <p id="th_p10">Tracciando \(r\) sul Piano Complesso (Argan-Gauss), se \(k>0\) emerge una parte immaginaria che solleva il vettore dall'asse reale, causando una deviazione dell'angolo \(\phi\). Lo sfasamento netto totale del film è la differenza tra le due interfacce: <strong>\(\Delta\phi = \phi_1 - \phi_2\)</strong>.</p>
+    
+    <p id="th_p11">Assumendo incidenza normale (\(\theta = 0\)), per calcolare lo spessore reale dobbiamo esplicitare la condizione di fase totale generalizzata per l'interferenza costruttiva:</p>
+    <div class="formula-box" id="th_form_gen">
+        \( d = \frac{\lambda}{4 n} \left( 2m - \frac{\Delta\phi}{\pi} \right) \)
+    </div>
+    
+    <p id="th_p12"><strong>La validità del modello:</strong> Osservando la formula, se il materiale torna trasparente (\(k=0\)) nel <i>Caso A</i>, lo sfasamento netto \(\Delta\phi\) è esattamente \(\pi\). Sostituendo \(\frac{\pi}{\pi} = 1\), l'equazione diventa \(d = \frac{\lambda}{4n}(2m - 1)\), che si riduce a \(2nd = \left(m - \frac{1}{2}\right)\lambda\). Essendo un multiplo semi-intero del tutto equivalente a \(\left(m + \frac{1}{2}\right)\lambda\) per semplice traslazione dell'indice intero \(m\), la formula ridimostra rigorosamente la condizione dei <strong>Massimi (Interferenza Costruttiva)</strong> del Caso A.</p>
+</div>
+
+<div class="footer">
+    <strong id="f_dev">Sviluppato da:</strong> <a href="https://www.dfa.unict.it/dottorandi/giuseppe.signorelli" target="_blank">Giuseppe Signorelli</a><br>
+    <span id="f_phd">Dottorato in Scienza dei Materiali e Nanotecnologie (XLI Ciclo)</span><br>
+    <span id="f_aff">Affiliazioni: Università di Catania & CNR-IMM</span><br>
+    <div style="margin-top: 8px; font-weight: normal;">
+        <span id="f_cont" style="font-weight: bold;">Contatti:</span> 
+        <a href="mailto:giuseppe.signorelli98@gmail.com" style="font-weight: normal;">giuseppe.signorelli98@gmail.com</a> | 
+        <a href="mailto:giuseppe.signorelli@phd.unict.it" style="font-weight: normal;">giuseppe.signorelli@phd.unict.it</a>
+    </div>
+</div>
+
+<script>
+    // DIZIONARIO DELLE TRADUZIONI
+    const dict = {
+        it: {
+            btn_lang: "🇬🇧 English",
+            t_main_title: "Calcolatore Spessore Film Sottili",
+            t_main_desc: "Calcola lo spessore ottico di un film tenendo conto dell'indice di rifrazione del substrato e del film, dell'assorbimento e del tipo di misurazione sperimentale.",
+            t_lbl_lambda: "Lunghezza d'onda λ (nm):",
+            t_lbl_nfilm: "Indice Rifrazione Film (n_film):",
+            t_lbl_kfilm: "Coeff. Estinzione Film (k):",
+            t_lbl_nsub: "Indice Rifrazione Substrato (n_sub):",
+            t_lbl_ord: "Ordine m (intero o semi-intero):",
+            t_lbl_spect: "Tipo di Spettro:",
+            opt_R: "Riflettanza (R)",
+            opt_T: "Trasmittanza (T)",
+            t_lbl_fringe: "Frangia Dedotta:",
+            lbl_peak: "PICCO (Massimo)",
+            lbl_valley: "VALLE (Minimo)",
+            t_res_anal: "Analisi Fenomenologica",
+            t_res_dyn: "Dinamica di Fase",
+            t_res_p1: "Sfasamento Aria/Film",
+            t_res_p2: "Sfasamento Film/Sub",
+            t_res_pd: "Differenza Fase",
+            t_res_thick: "Spessore Corretto (d):",
+            th_h2: "Fondamenti Fisici: Interferenza e Fase Complessa",
+            th_h3_1: "1. La Legge Base dell'Interferenza (Mezzi Ideali)",
+            th_p3: "Il fenomeno dell'interferenza nei film sottili è governato dalla differenza di cammino ottico tra il raggio riflesso dalla superficie superiore (Aria/Film) e quello riflesso dalla superficie inferiore (Film/Substrato). Se ignoriamo l'assorbimento (\\(k=0\\)) e i salti di fase anomali, la differenza di cammino in incidenza normale è semplicemente il doppio del tragitto nel film: \\(\\Delta = 2 \\cdot n_{film} \\cdot d\\).",
+            th_h3_2: "2. Il Salto di Fase \\(\\pi\\) (Riflessione da Mezzo più Denso)",
+            th_p5: "Le equazioni di Fresnel impongono che un'onda elettromagnetica subisca uno sfasamento di \\(180^\\circ\\) (\\(\\pi\\)) se viene riflessa da un mezzo con indice di rifrazione <i>maggiore</i> di quello di provenienza. Analizziamo i due regimi tipici assumendo materiali trasparenti (\\(k=0\\)):",
+            th_box1: "<strong>Caso A: Salto di Fase Netto \\(\\pi\\) (\\(n_{aria} < n_{film} > n_{sub}\\))</strong><br>Es: Aria (1.0) / ITO (2.0) / Vetro (1.5).<br>All'interfaccia superiore la luce subisce uno sfasamento di \\(\\pi\\). All'interfaccia inferiore passa verso un indice più basso, quindi lo sfasamento è \\(0\\). <br>A causa di questo sfasamento netto di \\(\\pi\\), le equazioni di base si <strong>invertono</strong> matematicamente:<div class='formula-box'>Massimi (Interferenza Costruttiva in R): \\( 2 n d = \\left(m + \\frac{1}{2}\\right) \\lambda \\)<br>Minimi (Interferenza Distruttiva in R): \\( 2 n d = m \\lambda \\)</div>",
+            th_box2: "<strong>Caso B: Nessun Salto Netto (\\(n_{aria} < n_{film} < n_{sub}\\))</strong><br>Es: Aria (1.0) / ITO (2.0) / Silicio (3.5).<br>Qui, <i>entrambe</i> le interfacce riflettono la luce verso un mezzo otticamente più denso. Si generano due sfasamenti di \\(\\pi\\) che si elidono a vicenda. Le condizioni di interferenza mantengono la forma classica intatta:<div class='formula-box'>Massimi (Interferenza Costruttiva in R): \\( 2 n d = m \\lambda \\)<br>Minimi (Interferenza Distruttiva in R): \\( 2 n d = \\left(m + \\frac{1}{2}\\right) \\lambda \\)</div>",
+            th_h3_3: "3. L'ingresso di \\(k\\): Sfasamento Anomalo e Coefficienti di Fresnel",
+            th_p6: "Quando il materiale assorbe luce, il coefficiente di estinzione è \\(k>0\\). L'indice di rifrazione diventa un numero complesso \\(\\tilde{N} = n - ik\\). Di conseguenza, il coefficiente di riflessione in ampiezza di Fresnel per incidenza normale, \\(r = \\frac{\\tilde{N}_1 - \\tilde{N}_2}{\\tilde{N}_1 + \\tilde{N}_2}\\), assume la forma complessa \\(r = |r|e^{i\\phi}\\), da cui si estrae analiticamente la fase \\(\\phi = \\arctan\\left(\\frac{\\text{Im}(r)}{\\text{Re}(r)}\\right)\\).",
+            th_p10: "Tracciando \\(r\\) sul Piano Complesso (Argan-Gauss), se \\(k>0\\) emerge una parte immaginaria che solleva il vettore dall'asse reale, causando una deviazione dell'angolo \\(\\phi\\). Lo sfasamento netto totale del film è la differenza tra le due interfacce: <strong>\\(\\Delta\\phi = \\phi_1 - \\phi_2\\)</strong>.",
+            th_p11: "Assumendo incidenza normale (\\(\\theta = 0\\)), per calcolare lo spessore reale dobbiamo esplicitare la condizione di fase totale generalizzata per l'interferenza costruttiva:",
+            th_form_gen: "\\( d = \\frac{\\lambda}{4 n} \\left( 2m - \\frac{\\Delta\\phi}{\\pi} \\right) \\)",
+            th_p12: "<strong>La validità del modello:</strong> Osservando la formula, se il materiale torna trasparente (\\(k=0\\)) nel <i>Caso A</i>, lo sfasamento netto \\(\\Delta\\phi\\) è esattamente \\(\\pi\\). Sostituendo \\(\\frac{\\pi}{\\pi} = 1\\), l'equazione diventa \\(d = \\frac{\\lambda}{4n}(2m - 1)\\), che si riduce a \\(2nd = \\left(m - \\frac{1}{2}\\right)\\lambda\\). Essendo un multiplo semi-intero del tutto equivalente a \\(\\left(m + \\frac{1}{2}\\right)\\lambda\\) per semplice traslazione dell'indice intero \\(m\\), la formula ridimostra rigorosamente la condizione dei <strong>Massimi (Interferenza Costruttiva)</strong> del Caso A.",
+            f_dev: "Sviluppato da:",
+            f_phd: "Dottorato in Scienza dei Materiali e Nanotecnologie (XLI Ciclo)",
+            f_aff: "Affiliazioni: Università di Catania & CNR-IMM",
+            f_cont: "Contatti:",
+            log_r_max: "Deduzione: <strong>INTERFERENZA COSTRUTTIVA</strong>.<br>Le onde riflesse si sommano in fase.",
+            log_r_min: "Deduzione: <strong>INTERFERENZA DISTRUTTIVA</strong>.<br>Le onde riflesse si cancellano a vicenda.<br><span style='color: #27ae60; font-weight: bold;'>[Regime di Antireflective Coating]</span>",
+            log_t_max: "Deduzione: <strong>INTERFERENZA DISTRUTTIVA</strong> in riflessione.<br>(Massima luce trasmessa attraverso il film).<br><span style='color: #27ae60; font-weight: bold;'>[Regime di Antireflective Coating]</span>",
+            log_t_min: "Deduzione: <strong>INTERFERENZA COSTRUTTIVA</strong> in riflessione.<br>(Minima luce trasmessa attraverso il film)."
+        },
+        en: {
+            btn_lang: "🇮🇹 Italiano",
+            t_main_title: "Thin Film Thickness Calculator",
+            t_main_desc: "Calculate the optical thickness of a thin film accounting for the refractive index of the substrate and the film, absorption, and the type of experimental measurement.",
+            t_lbl_lambda: "Wavelength λ (nm):",
+            t_lbl_nfilm: "Film Refractive Index (n_film):",
+            t_lbl_kfilm: "Film Extinction Coeff. (k):",
+            t_lbl_nsub: "Substrate Refractive Index (n_sub):",
+            t_lbl_ord: "Order m (integer or half-integer):",
+            t_lbl_spect: "Spectrum Type:",
+            opt_R: "Reflectance (R)",
+            opt_T: "Transmittance (T)",
+            t_lbl_fringe: "Deduced Fringe:",
+            lbl_peak: "PEAK (Maximum)",
+            lbl_valley: "VALLEY (Minimum)",
+            t_res_anal: "Phenomenological Analysis",
+            t_res_dyn: "Phase Dynamics",
+            t_res_p1: "Air/Film Phase Shift",
+            t_res_p2: "Film/Sub Phase Shift",
+            t_res_pd: "Phase Difference",
+            t_res_thick: "Corrected Thickness (d):",
+            th_h2: "Physical Foundations: Interference and Complex Phase",
+            th_h3_1: "1. Basic Law of Interference (Ideal Media)",
+            th_p3: "The phenomenon of thin-film interference is governed by the optical path difference between the ray reflected from the top surface (Air/Film) and the one reflected from the bottom surface (Film/Substrate). Ignoring absorption (\\(k=0\\)) and anomalous phase shifts, the path difference at normal incidence is simply twice the path in the film: \\(\\Delta = 2 \\cdot n_{film} \\cdot d\\).",
+            th_h3_2: "2. The \\(\\pi\\) Phase Shift (Reflection from a Denser Medium)",
+            th_p5: "Fresnel equations dictate that an electromagnetic wave undergoes a phase shift of \\(180^\\circ\\) (\\(\\pi\\)) if it reflects off a medium with a <i>higher</i> refractive index than the incident medium. Let's analyze the two typical regimes assuming transparent materials (\\(k=0\\)):",
+            th_box1: "<strong>Case A: Net \\(\\pi\\) Phase Shift (\\(n_{air} < n_{film} > n_{sub}\\))</strong><br>Ex: Air (1.0) / ITO (2.0) / Glass (1.5).<br>At the top interface, light undergoes a \\(\\pi\\) phase shift. At the bottom interface, it passes to a lower index, so the shift is \\(0\\). <br>Due to this net \\(\\pi\\) phase shift, the basic equations are mathematically <strong>inverted</strong>:<div class='formula-box'>Maxima (Constructive Interference in R): \\( 2 n d = \\left(m + \\frac{1}{2}\\right) \\lambda \\)<br>Minima (Destructive Interference in R): \\( 2 n d = m \\lambda \\)</div>",
+            th_box2: "<strong>Case B: No Net Phase Shift (\\(n_{air} < n_{film} < n_{sub}\\))</strong><br>Ex: Air (1.0) / ITO (2.0) / Silicon (3.5).<br>Here, <i>both</i> interfaces reflect light towards an optically denser medium. Two \\(\\pi\\) phase shifts are generated which cancel each other out. The interference conditions maintain their classic intact form:<div class='formula-box'>Maxima (Constructive Interference in R): \\( 2 n d = m \\lambda \\)<br>Minima (Destructive Interference in R): \\( 2 n d = \\left(m + \\frac{1}{2}\\right) \\lambda \\)</div>",
+            th_h3_3: "3. The Role of \\(k\\): Anomalous Phase Shift and Fresnel Coefficients",
+            th_p6: "When the material absorbs light, the extinction coefficient is \\(k>0\\). The refractive index becomes a complex number \\(\\tilde{N} = n - ik\\). Consequently, the Fresnel amplitude reflection coefficient for normal incidence, \\(r = \\frac{\\tilde{N}_1 - \\tilde{N}_2}{\\tilde{N}_1 + \\tilde{N}_2}\\), takes the complex form \\(r = |r|e^{i\\phi}\\), from which the phase is analytically extracted as \\(\\phi = \\arctan\\left(\\frac{\\text{Im}(r)}{\\text{Re}(r)}\\right)\\).",
+            th_p10: "Plotting \\(r\\) on the Complex Plane (Argand-Gauss), if \\(k>0\\) an imaginary part emerges that lifts the vector from the real axis, causing an angle deviation \\(\\phi\\). The total net phase shift of the film is the difference between the two interfaces: <strong>\\(\\Delta\\phi = \\phi_1 - \\phi_2\\)</strong>.",
+            th_p11: "Assuming normal incidence (\\(\\theta = 0\\)), to calculate the actual thickness we must spell out the generalized total phase condition for constructive interference:",
+            th_form_gen: "\\( d = \\frac{\\lambda}{4 n} \\left( 2m - \\frac{\\Delta\\phi}{\\pi} \\right) \\)",
+            th_p12: "<strong>Model Validity:</strong> Looking at the formula, if the material becomes transparent (\\(k=0\\)) in <i>Case A</i>, the net phase shift \\(\\Delta\\phi\\) is exactly \\(\\pi\\). Substituting \\(\\frac{\\pi}{\\pi} = 1\\), the equation becomes \\(d = \\frac{\\lambda}{4n}(2m - 1)\\), which reduces to \\(2nd = \\left(m - \\frac{1}{2}\\right)\\lambda\\). Since a half-integer multiple is entirely equivalent to \\(\\left(m + \\frac{1}{2}\\right)\\lambda\\) by simply shifting the integer index \\(m\\), the formula rigorously proves the <strong>Maxima (Constructive Interference)</strong> condition for Case A.",
+            f_dev: "Developed by:",
+            f_phd: "PhD in Materials Science and Nanotechnology (XLI Cycle)",
+            f_aff: "Affiliations: University of Catania & CNR-IMM",
+            f_cont: "Contact:",
+            log_r_max: "Deduction: <strong>CONSTRUCTIVE INTERFERENCE</strong>.<br>Reflected waves add up in phase.",
+            log_r_min: "Deduction: <strong>DESTRUCTIVE INTERFERENCE</strong>.<br>Reflected waves cancel each other out.<br><span style='color: #27ae60; font-weight: bold;'>[Antireflective Coating Regime]</span>",
+            log_t_max: "Deduction: <strong>DESTRUCTIVE INTERFERENCE</strong> in reflection.<br>(Maximum light transmitted through the film).<br><span style='color: #27ae60; font-weight: bold;'>[Antireflective Coating Regime]</span>",
+            log_t_min: "Deduction: <strong>CONSTRUCTIVE INTERFERENCE</strong> in reflection.<br>(Minimum light transmitted through the film)."
+        }
+    };
+
+    let currentLang = 'it';
+
+    function toggleLanguage() {
+        currentLang = currentLang === 'it' ? 'en' : 'it';
+        applyLanguage();
+        calcola(); 
+        if (window.MathJax) {
+            MathJax.typesetPromise();
+        }
+    }
+
+    function applyLanguage() {
+        const d = dict[currentLang];
+        Object.keys(d).forEach(key => {
+            const el = document.getElementById(key);
+            if (el && !key.startsWith("log_") && !key.startsWith("lbl_")) {
+                el.innerHTML = d[key];
+            }
+        });
+    }
+
+    // CORE DI CALCOLO FISICO
+    function calcola() {
+        const lambda = parseFloat(document.getElementById('lambda').value);
+        const nf = parseFloat(document.getElementById('n_film').value);
+        const kf = Math.max(parseFloat(document.getElementById('k_film').value), 1e-10); 
+        const ns = parseFloat(document.getElementById('n_sub').value);
+        const m = parseFloat(document.getElementById('ordine').value); 
+        const spettro = document.getElementById('spettro').value;
+
+        const d = dict[currentLang];
+
+        // 1. Deduzione Logica della Frangia (Picco/Valle)
+        let isInteger = Math.abs(m % 1) < 0.01; 
+        let nFilmGreater = (nf > ns);
+        let isR = (spettro === 'R');
+
+        // Se n_film > n_sub (Salto Pi), m intero = Valle in R. Se n_film < n_sub (No salto), m intero = Picco in R.
+        let isPeakInR = nFilmGreater ? !isInteger : isInteger;
+        
+        // Se misuriamo Trasmittanza, i picchi e le valli si invertono rispetto alla Riflettanza
+        let isPeakMeasured = isR ? isPeakInR : !isPeakInR;
+
+        // Aggiorna UI Frangia Dedotta
+        let frangiaStr = isPeakMeasured ? d.lbl_peak : d.lbl_valley;
+        document.getElementById('out_frangia').innerText = frangiaStr;
+
+        // Aggiorna Testo Fisico
+        let testoFisica = "";
+        if (isR) {
+            testoFisica = isPeakMeasured ? d.log_r_max : d.log_r_min;
+        } else {
+            testoFisica = isPeakMeasured ? d.log_t_max : d.log_t_min;
+        }
+        document.getElementById('out_logica').innerHTML = testoFisica;
+
+        // 2. Calcolo Sfasamenti Fresnel (atan2 puro)
+        const numRe1 = 1 - Math.pow(nf, 2) - Math.pow(kf, 2);
+        const numIm1 = 2 * kf;
+        let phi1_rad = Math.atan2(numIm1, numRe1);
+
+        const numRe2 = Math.pow(nf, 2) - Math.pow(ns, 2) + Math.pow(kf, 2);
+        const numIm2 = -2 * ns * kf;
+        let phi2_rad = Math.atan2(numIm2, numRe2);
+
+        let delta_rad = phi1_rad - phi2_rad;
+        
+        // 3. Calcolo Correzione Fase
+        let ideal_delta = nFilmGreater ? Math.PI : 0;
+        let phase_diff = delta_rad - ideal_delta;
+        
+        // Normalizzazione della deviazione di fase (-PI a PI)
+        while (phase_diff > Math.PI) phase_diff -= 2 * Math.PI;
+        while (phase_diff <= -Math.PI) phase_diff += 2 * Math.PI;
+
+        let display_delta = ideal_delta + phase_diff;
+
+        document.getElementById('out_phi1').innerText = (phi1_rad * 180 / Math.PI).toFixed(1);
+        document.getElementById('out_phi2').innerText = (phi2_rad * 180 / Math.PI).toFixed(1);
+        document.getElementById('out_delta').innerText = (display_delta * 180 / Math.PI).toFixed(1);
+
+        // 4. Calcolo Analitico Diretto
+        let d_ideal = (m * lambda) / (2 * nf);
+        let d_correction = -(lambda / (4 * Math.PI * nf)) * phase_diff;
+        
+        let d_final = d_ideal + d_correction;
+
+        document.getElementById('out_spessore').innerText = Math.max(0, d_final).toFixed(1);
+    }
+
+    const inputs = document.querySelectorAll('input, select');
+    inputs.forEach(input => input.addEventListener('input', calcola));
+    applyLanguage(); 
+    calcola();
+</script>
+
+<script data-goatcounter="https://thin-filmt-thickness-calculator-gs.goatcounter.com/count"
+            async src="//gc.zgo.at/count.js"></script>
+
+</body>
+</html>
